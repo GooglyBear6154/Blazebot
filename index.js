@@ -2,12 +2,17 @@ const path = require('path');
 const util = require('util');
 
 const trovojs = require('trovo.js');
-
-var DEV = false;
+const fs = require('fs'); 
 
 const Bot = require(path.join(__dirname, 'modules', 'Bot.js'));
 
-const client = new trovojs.BrowserClient({ logger: Bot.log, headless: !DEV });
+const cookiesJson = fs.readFileSync("cookies.json");
+const cookies = JSON.parse(cookiesJson);
+
+var DEV = false;
+var hasCookies = cookies.length > 0;
+
+const client = new trovojs.BrowserClient({ logger: Bot.log, headless: hasCookies }); //change so that headless is false when cookies arent saved properly
 
 Bot.setClient(client);
 Bot.setRoot(path.resolve(__dirname));
@@ -127,12 +132,16 @@ client.on('chatMessage', (message) => {
 
 client.on('ready', () => {
   Bot.log(Bot.translate("bot.ready"));
+  if( cookies.length == 0 ){
+      client.getCookies("cookies.json");
+  }
 });
 
 client.login(
   Bot.settings.trovo.page,
   Bot.settings.trovo.email,
   Bot.settings.trovo.password,
+  cookies,
   Bot.settings.owner.email || null,
   Bot.settings.owner.password || null
 );
